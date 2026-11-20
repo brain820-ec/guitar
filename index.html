@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guitar Tuner &amp; Metronome</title>
+  <meta name="theme-color" content="#14161a" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Fretboard</h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-panel="tuner">Tuner</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="metronome">Metronome</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= TUNER ================= -->
+    <section id="tuner" class="panel active" role="tabpanel">
+      <div class="card tuner-card">
+        <div class="gauge">
+          <svg viewBox="0 0 300 170" class="gauge-svg" aria-hidden="true">
+            <path class="gauge-arc" d="M 20 150 A 130 130 0 0 1 280 150" />
+            <g id="ticks"></g>
+            <path class="gauge-zone" d="M 136.4 20.7 A 130 130 0 0 1 163.6 20.7" />
+            <line id="needle" class="needle" x1="150" y1="150" x2="150" y2="32" />
+            <circle cx="150" cy="150" r="7" class="needle-hub" />
+          </svg>
+          <div class="gauge-labels"><span>−50</span><span>0</span><span>+50</span></div>
+        </div>
+
+        <div class="readout">
+          <div id="note" class="note">—</div>
+          <div class="sub">
+            <span id="freq">0.0 Hz</span>
+            <span id="cents" class="cents">±0¢</span>
+          </div>
+          <div id="status" class="status">Tap “Start tuner” and allow microphone access</div>
+        </div>
+
+        <div class="strings" id="strings"></div>
+
+        <div class="controls">
+          <button id="tunerToggle" class="btn primary">Start tuner</button>
+          <label class="field">
+            <span>Tuning</span>
+            <select id="tuningSelect"></select>
+          </label>
+          <label class="field">
+            <span>A4 =</span>
+            <div class="stepper">
+              <button class="btn small" data-a4="-1" aria-label="Lower reference">−</button>
+              <output id="a4Value">440</output><span class="unit">Hz</span>
+              <button class="btn small" data-a4="1" aria-label="Raise reference">+</button>
+            </div>
+          </label>
+        </div>
+        <p class="hint">Tap a string to hear its reference tone.</p>
+      </div>
+    </section>
+
+    <!-- ================= METRONOME ================= -->
+    <section id="metronome" class="panel" role="tabpanel" hidden>
+      <div class="card metro-card">
+        <div class="beats" id="beats" aria-label="Beats in bar (tap to change accent)"></div>
+
+        <div class="bpm-display">
+          <button class="btn round" data-bpm="-1" aria-label="Decrease tempo">−</button>
+          <div class="bpm">
+            <output id="bpmValue">120</output>
+            <span class="bpm-label">BPM · <span id="tempoName">Allegro</span></span>
+          </div>
+          <button class="btn round" data-bpm="1" aria-label="Increase tempo">+</button>
+        </div>
+
+        <input id="bpmSlider" type="range" min="30" max="300" value="120" aria-label="Tempo" />
+
+        <div class="row">
+          <button id="metroToggle" class="btn primary big">Start</button>
+          <button id="tapBtn" class="btn big">Tap</button>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span>Beats / bar</span>
+            <div class="stepper">
+              <button class="btn small" data-beats="-1" aria-label="Fewer beats">−</button>
+              <output id="beatsValue">4</output>
+              <button class="btn small" data-beats="1" aria-label="More beats">+</button>
+            </div>
+          </label>
+          <label class="field">
+            <span>Subdivision</span>
+            <select id="subdivSelect">
+              <option value="1">♩ Quarter</option>
+              <option value="2">♫ Eighth</option>
+              <option value="3">Triplet</option>
+              <option value="4">Sixteenth</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Sound</span>
+            <select id="soundSelect">
+              <option value="click">Click</option>
+              <option value="wood">Woodblock</option>
+              <option value="beep">Beep</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Volume</span>
+            <input id="volSlider" type="range" min="0" max="100" value="80" aria-label="Volume" />
+          </label>
+        </div>
+        <p class="hint">Space = start/stop · ←/→ = ±1 BPM · ↑/↓ = ±5 BPM · T = tap</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="tuner.js"></script>
+  <script src="metronome.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
