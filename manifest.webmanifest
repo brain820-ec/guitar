@@ -1,6 +1,6 @@
 {
-  "name": "Fretboard – Guitar Tuner & Metronome",
-  "short_name": "Fretboard",
+  "name": "Slothmatic – Guitar Tuner & Metronome",
+  "short_name": "Slothmatic",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
