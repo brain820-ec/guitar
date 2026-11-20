@@ -25,7 +25,8 @@
 
     start() {
       if (this.running) return;
-      this.ctx = AudioShared.unlock(); // shared context; handles iOS gesture + silent switch
+      this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === "suspended") this.ctx.resume();
       this.running = true;
       this.beat = 0;
       this.sub = 0;
