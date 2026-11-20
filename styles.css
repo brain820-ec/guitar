@@ -10,8 +10,55 @@
   --warn: #f2a541;
   --bad: #f87171;
   --radius: 16px;
+  --tuned-bg: rgba(74, 222, 128, 0.12);
+  --on-accent: #1a1205;
   color-scheme: dark;
 }
+
+:root[data-theme="light"] {
+  --bg: #f3f1ec;
+  --card: #ffffff;
+  --card-2: #f1eee8;
+  --line: #d8d3c8;
+  --text: #1c1e22;
+  --muted: #6a7080;
+  --accent: #e08a1e;
+  --good: #16a34a;
+  --warn: #c97a10;
+  --bad: #dc2626;
+  --tuned-bg: rgba(22, 163, 74, 0.12);
+  color-scheme: light;
+}
+
+body { transition: background 0.2s, color 0.2s; }
+
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.theme-toggle {
+  width: 40px; height: 40px; flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.theme-toggle::before { content: "☀︎"; }
+:root[data-theme="light"] .theme-toggle::before { content: "☾"; }
+
+.switch { display: flex; align-items: center; gap: 10px; justify-content: center; font-size: 0.9rem; color: var(--muted); cursor: pointer; }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch-track {
+  width: 40px; height: 24px; border-radius: 999px; flex: none;
+  background: var(--line); position: relative; transition: background 0.15s;
+}
+.switch-thumb {
+  position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.switch input:checked + .switch-track { background: var(--good); }
+.switch input:checked + .switch-track .switch-thumb { transform: translateX(16px); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 * { box-sizing: border-box; }
 
@@ -87,7 +134,7 @@ main {
   user-select: none;
 }
 .btn:active { transform: scale(0.96); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #1a1205; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn.small { padding: 4px 12px; border-radius: 8px; }
 .btn.big { flex: 1; padding: 16px; font-size: 1.1rem; }
 .btn.round {
@@ -174,9 +221,9 @@ input[type="range"] { accent-color: var(--accent); }
 }
 .string-btn small { font-weight: 500; font-size: 0.65rem; color: var(--muted); }
 .string-btn.target { border-color: var(--accent); }
-.string-btn.tuned { border-color: var(--good); background: rgba(74, 222, 128, 0.12); }
-.string-btn.playing { background: var(--accent); color: #1a1205; }
-.string-btn.playing small { color: #1a1205; }
+.string-btn.tuned { border-color: var(--good); background: var(--tuned-bg); }
+.string-btn.playing { background: var(--accent); color: var(--on-accent); }
+.string-btn.playing small { color: var(--on-accent); }
 
 .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; }
 .controls #tunerToggle { grid-column: 1 / -1; padding: 14px; font-size: 1.05rem; }
@@ -210,6 +257,8 @@ input[type="range"] { accent-color: var(--accent); }
 #bpmSlider { width: 100%; }
 
 @media (max-width: 400px) {
+  .topbar h1 { font-size: 1.05rem; }
+  .tab { padding: 8px 11px; }
   .note { font-size: 4rem; }
   .bpm output { font-size: 3.6rem; }
   .grid, .controls { grid-template-columns: 1fr; }

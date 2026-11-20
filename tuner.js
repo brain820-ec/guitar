@@ -125,6 +125,27 @@
       this._loop();
     }
 
+    /** Short two-note bell to signal "in tune". Pitched high so the mic/detector ignores it. */
+    chime() {
+      const ctx = this.ctx;
+      if (!ctx || ctx.state !== "running") return;
+      const t = ctx.currentTime;
+      [[2093, 0], [2637, 0.09]].forEach(([f, delay]) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t + delay);
+        g.gain.exponentialRampToValueAtTime(0.25, t + delay + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.5);
+        o.connect(g).connect(ctx.destination);
+        o.start(t + delay);
+        o.stop(t + delay + 0.55);
+      });
+      // Ignore the mic while the chime rings so it can't skew the reading.
+      this.suppressUntil = performance.now() + 650;
+    }
+
     stop() {
       this.running = false;
       cancelAnimationFrame(this.raf);
@@ -145,6 +166,8 @@
       const now = performance.now();
       if (now - (this._last || 0) < 33) return;
       this._last = now;
+
+      if (now < (this.suppressUntil || 0)) return;
 
       if (this.ctx.state !== "running") {
         this.onStatus("Audio paused by the browser — tap anywhere to resume");

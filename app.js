@@ -8,6 +8,21 @@
     set(k, v) { try { localStorage.setItem("fb." + k, JSON.stringify(v)); } catch {} },
   };
 
+  /* ---------------- theme ---------------- */
+  const themeBtn = $("#themeToggle");
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    themeMeta.content = t === "light" ? "#f3f1ec" : "#14161a";
+    themeBtn.setAttribute("aria-label", t === "light" ? "Switch to dark theme" : "Switch to light theme");
+  }
+  applyTheme(document.documentElement.dataset.theme || "dark");
+  themeBtn.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    applyTheme(next);
+    store.set("theme", next);
+  });
+
   /* ---------------- tabs ---------------- */
   function showPanel(id) {
     $$(".tab").forEach((t) => {
@@ -101,6 +116,11 @@
 
   // Track how long the note has been in tune so string chips light up only when stable.
   let inTuneSince = 0;
+  let chimed = false; // one chime per in-tune episode
+
+  const chimeToggle = $("#chimeToggle");
+  chimeToggle.checked = store.get("chime", true);
+  chimeToggle.addEventListener("change", () => store.set("chime", chimeToggle.checked));
 
   const tuner = new Tuner({
     onStatus: (s) => (statusEl.textContent = s),
@@ -115,6 +135,7 @@
         centsEl.textContent = "±0¢";
         setNeedle(0);
         inTuneSince = 0;
+        chimed = false;
         return;
       }
 
@@ -138,10 +159,16 @@
         if (!inTuneSince) inTuneSince = performance.now();
         if (performance.now() - inTuneSince > 600 && nearest && +nearest.dataset.midi === r.midi) {
           nearest.classList.add("tuned");
+          if (!chimed) {
+            chimed = true;
+            if (chimeToggle.checked) tuner.chime();
+          }
         }
         statusEl.textContent = "In tune ✓";
       } else {
         inTuneSince = 0;
+        // Re-arm only once clearly out of tune, so hovering at ±5¢ doesn't re-chime.
+        if (abs > IN_TUNE_CENTS * 2) chimed = false;
         card.classList.add(abs <= CLOSE_CENTS ? "close" : "off");
         statusEl.textContent = r.cents < 0 ? "Too flat — tighten ↑" : "Too sharp — loosen ↓";
       }

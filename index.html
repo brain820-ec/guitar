@@ -5,15 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Guitar Tuner &amp; Metronome</title>
   <meta name="theme-color" content="#14161a" />
-  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Apply saved/system theme before first paint to avoid a flash.
+    (function () {
+      var t;
+      try { t = JSON.parse(localStorage.getItem("fb.theme")); } catch (e) {}
+      if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <header class="topbar">
     <h1>Fretboard</h1>
-    <nav class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" data-panel="tuner">Tuner</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="metronome">Metronome</button>
-    </nav>
+    <div class="topbar-right">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" role="tab" aria-selected="true" data-panel="tuner">Tuner</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="metronome">Metronome</button>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" aria-label="Switch theme"></button>
+    </div>
   </header>
 
   <main>
@@ -57,6 +69,11 @@
             </div>
           </label>
         </div>
+        <label class="switch">
+          <input type="checkbox" id="chimeToggle" checked />
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span>Chime when a string is in tune</span>
+        </label>
         <p class="hint">Tap a string to hear its reference tone.</p>
       </div>
     </section>
@@ -118,8 +135,8 @@
     </section>
   </main>
 
-  <script src="tuner.js?v=3"></script>
+  <script src="tuner.js?v=4"></script>
   <script src="metronome.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
