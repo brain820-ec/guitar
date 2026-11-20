@@ -85,10 +85,20 @@
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Microphone not supported (open via http://localhost or https).");
       }
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      });
+      // iOS: the AudioContext must be created and resumed synchronously inside the
+      // tap, before any await, or it stays suspended and the mic reads silence.
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.ctx.resume().catch(() => {});
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        });
+      } catch (err) {
+        this.ctx.close();
+        this.ctx = null;
+        throw err;
+      }
+      if (this.ctx.state !== "running") await this.ctx.resume().catch(() => {});
       const src = this.ctx.createMediaStreamSource(this.stream);
 
       // Gentle low-pass to tame upper harmonics that confuse detection.
@@ -98,7 +108,15 @@
 
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 4096;
-      src.connect(lp).connect(this.analyser);
+      // Safari only processes nodes that reach the destination, so route through a muted gain.
+      const sink = this.ctx.createGain();
+      sink.gain.value = 0;
+      src.connect(lp).connect(this.analyser).connect(sink).connect(this.ctx.destination);
+
+      // If iOS still left the context suspended, resume on the next tap anywhere.
+      this._resumeOnTap = () => this.ctx && this.ctx.resume().catch(() => {});
+      document.addEventListener("touchend", this._resumeOnTap, { passive: true });
+      document.addEventListener("click", this._resumeOnTap);
 
       this.buf = new Float32Array(this.analyser.fftSize);
       this.running = true;
@@ -111,6 +129,8 @@
       this.running = false;
       cancelAnimationFrame(this.raf);
       this.stream?.getTracks().forEach((t) => t.stop());
+      document.removeEventListener("touchend", this._resumeOnTap);
+      document.removeEventListener("click", this._resumeOnTap);
       this.ctx?.close();
       this.ctx = null;
       this.onUpdate(null);
@@ -126,14 +146,23 @@
       if (now - (this._last || 0) < 33) return;
       this._last = now;
 
+      if (this.ctx.state !== "running") {
+        this.onStatus("Audio paused by the browser — tap anywhere to resume");
+        return;
+      }
+
       this.analyser.getFloatTimeDomainData(this.buf);
 
       let rms = 0;
       for (let i = 0; i < this.buf.length; i++) rms += this.buf[i] * this.buf[i];
       rms = Math.sqrt(rms / this.buf.length);
 
+      // iPhone mics with AGC off are quiet, so the noise gate is low.
       let freq = -1;
-      if (rms > 0.008) freq = yin(this.buf, this.ctx.sampleRate);
+      if (rms > 0.003) freq = yin(this.buf, this.ctx.sampleRate);
+      else if (now - this.lastHeard > 1200) {
+        this.onStatus(rms > 0 ? "Listening… play a string" : "No mic signal — check Safari microphone permission");
+      }
 
       if (freq > 0) {
         this.history.push(freq);
