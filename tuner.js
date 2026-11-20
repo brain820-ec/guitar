@@ -80,16 +80,26 @@
       this.lastHeard = 0;
     }
 
+    /** Call directly from a click handler: the AudioContext must be unlocked before any await (iOS). */
     async start() {
       if (this.running) return;
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Microphone not supported (open via http://localhost or https).");
       }
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      });
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const src = this.ctx.createMediaStreamSource(this.stream);
+      AudioShared.setSession("play-and-record");
+      this.ctx = AudioShared.unlock(); // synchronous, still inside the user gesture
+
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        });
+      } catch (err) {
+        AudioShared.setSession("playback");
+        throw err;
+      }
+      if (this.ctx.state !== "running") await this.ctx.resume().catch(() => {});
+
+      this.src = this.ctx.createMediaStreamSource(this.stream);
 
       // Gentle low-pass to tame upper harmonics that confuse detection.
       const lp = this.ctx.createBiquadFilter();
@@ -98,7 +108,11 @@
 
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 4096;
-      src.connect(lp).connect(this.analyser);
+
+      // Safari only processes nodes that reach the destination, so route through a muted gain.
+      this.sink = this.ctx.createGain();
+      this.sink.gain.value = 0;
+      this.src.connect(lp).connect(this.analyser).connect(this.sink).connect(this.ctx.destination);
 
       this.buf = new Float32Array(this.analyser.fftSize);
       this.running = true;
@@ -111,8 +125,9 @@
       this.running = false;
       cancelAnimationFrame(this.raf);
       this.stream?.getTracks().forEach((t) => t.stop());
-      this.ctx?.close();
-      this.ctx = null;
+      try { this.src?.disconnect(); this.sink?.disconnect(); } catch {}
+      this.src = this.sink = this.analyser = null;
+      AudioShared.setSession("playback"); // shared ctx stays open for metronome/tones
       this.onUpdate(null);
       this.onStatus("Tuner stopped");
     }
@@ -153,10 +168,8 @@
   }
 
   /** Short plucked-ish reference tone. */
-  let toneCtx;
   function playTone(freq, duration = 1.8) {
-    toneCtx = toneCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = toneCtx;
+    const ctx = AudioShared.unlock();
     const t = ctx.currentTime;
     const out = ctx.createGain();
     out.gain.setValueAtTime(0.0001, t);
