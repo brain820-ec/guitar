@@ -121,7 +121,7 @@
       this.buf = new Float32Array(this.analyser.fftSize);
       this.running = true;
       this.history = [];
-      this.onStatus("Listening… play a string");
+      this.onStatus("Ears open… play a string");
       this._loop();
     }
 
@@ -155,7 +155,7 @@
       this.ctx?.close();
       this.ctx = null;
       this.onUpdate(null);
-      this.onStatus("Tuner stopped");
+      this.onStatus("Back to sleep. Zzz…");
     }
 
     _loop() {
@@ -184,7 +184,7 @@
       let freq = -1;
       if (rms > 0.003) freq = yin(this.buf, this.ctx.sampleRate);
       else if (now - this.lastHeard > 1200) {
-        this.onStatus(rms > 0 ? "Listening… play a string" : "No mic signal — check Safari microphone permission");
+        this.onStatus(rms > 0 ? "Ears open… play a string" : "No mic signal — check Safari microphone permission");
       }
 
       if (freq > 0) {

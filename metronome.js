@@ -74,6 +74,46 @@
       g.connect(ctx.destination);
       const o = ctx.createOscillator();
 
+      if (this.sound === "bonk") {
+        // coconut knock: two hollow tones with a quick downward pitch drop
+        const o2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(430 * pitch, time);
+        o.frequency.exponentialRampToValueAtTime(250 * pitch, time + 0.08);
+        o2.type = "triangle";
+        o2.frequency.setValueAtTime(690 * pitch, time);
+        o2.frequency.exponentialRampToValueAtTime(400 * pitch, time + 0.06);
+        g2.gain.value = 0.35;
+        g.gain.setValueAtTime(0.0001, time);
+        g.gain.exponentialRampToValueAtTime(level * 1.3, time + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.0001, time + 0.14);
+        o.connect(g);
+        o2.connect(g2).connect(g);
+        o.start(time); o2.start(time);
+        o.stop(time + 0.15); o2.stop(time + 0.15);
+        return;
+      }
+      if (this.sound === "chirp") {
+        // little sloth squeak: fast upward sweep with a flutter
+        const p = { accent: 1.2, normal: 1, sub: 0.85 }[kind];
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.value = 38;
+        lfoGain.gain.value = 70 * p;
+        lfo.connect(lfoGain).connect(o.frequency);
+        o.type = "sine";
+        o.frequency.setValueAtTime(1900 * p, time);
+        o.frequency.exponentialRampToValueAtTime(3000 * p, time + 0.05);
+        o.frequency.exponentialRampToValueAtTime(2500 * p, time + 0.1);
+        g.gain.setValueAtTime(0.0001, time);
+        g.gain.exponentialRampToValueAtTime(level * 0.45, time + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, time + 0.11);
+        o.connect(g);
+        o.start(time); lfo.start(time);
+        o.stop(time + 0.12); lfo.stop(time + 0.12);
+        return;
+      }
       if (this.sound === "beep") {
         o.type = "sine";
         o.frequency.value = 880 * pitch;
@@ -121,16 +161,12 @@
   }
 
   function tempoName(bpm) {
-    if (bpm < 40) return "Grave";
-    if (bpm < 60) return "Largo";
-    if (bpm < 66) return "Larghetto";
-    if (bpm < 76) return "Adagio";
-    if (bpm < 108) return "Andante";
-    if (bpm < 120) return "Moderato";
-    if (bpm < 156) return "Allegro";
-    if (bpm < 176) return "Vivace";
-    if (bpm < 200) return "Presto";
-    return "Prestissimo";
+    if (bpm < 60) return "Snoozing";
+    if (bpm < 80) return "Hanging Out";
+    if (bpm < 110) return "Leisurely Climb";
+    if (bpm < 150) return "Strolling";
+    if (bpm <= 200) return "Surprisingly Brisk";
+    return "Sloth Panic!";
   }
 
   window.MetronomeLib = { Metronome, tempoName };
